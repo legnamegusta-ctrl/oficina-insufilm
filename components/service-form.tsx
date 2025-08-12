@@ -17,7 +17,9 @@ const serviceFormSchema = z.object({
   name: z.string().min(1, "Nome do serviço é obrigatório"),
   basePrice: z.number().min(0, "Preço deve ser maior ou igual a zero"),
   description: z.string().optional(),
-  active: z.boolean().default(true),
+  // `active` is required in the schema to avoid optional/required type mismatches
+  // The default value is handled via `useForm`'s `defaultValues`
+  active: z.boolean(),
 })
 
 type ServiceFormData = z.infer<typeof serviceFormSchema>
