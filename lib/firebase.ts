@@ -13,14 +13,14 @@ const firebaseConfig = {
 }
 
 // Validate required environment variables
-const requiredEnvVars = [
-  "NEXT_PUBLIC_FIREBASE_API_KEY",
-  "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-  "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-  "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-  "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-  "NEXT_PUBLIC_FIREBASE_APP_ID",
-]
+const firebaseConfig = {
+  apiKey: "AIzaSyAaaXxKG4BwAKIBdDk0vrSNsQzK8BbWIA0",
+  authDomain: "brancofilmcv.firebaseapp.com",
+  projectId: "brancofilmcv",
+  storageBucket: "brancofilmcv.firebasestorage.app",
+  messagingSenderId: "513537369615",
+  appId: "1:513537369615:web:6cfec35394b5852857e57a"
+};
 
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
 
