@@ -289,39 +289,42 @@ export const inventoryOperations = {
 
 // User operations
 export const userOperations = {
-  async getAll(): Promise<User[]> {
-    const querySnapshot = await getDocs(query(collection(db, "users"), orderBy("name")))
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      uid: doc.id,
-      ...doc.data(),
-    })) as User[]
-  },
+    async getAll(): Promise<User[]> {
+      const querySnapshot = await getDocs(query(collection(db, "users"), orderBy("name")))
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        uid: doc.id,
+        ...(doc.data() as Omit<User, "id" | "uid">),
+      })) as User[]
+    },
 
-  async getByRole(role: UserRole): Promise<User[]> {
-    const querySnapshot = await getDocs(query(collection(db, "users"), where("role", "==", role), orderBy("name")))
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      uid: doc.id,
-      ...doc.data(),
-    })) as User[]
-  },
+    async getByRole(role: UserRole): Promise<User[]> {
+      const querySnapshot = await getDocs(
+        query(collection(db, "users"), where("role", "==", role), orderBy("name")),
+      )
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        uid: doc.id,
+        ...(doc.data() as Omit<User, "id" | "uid">),
+      })) as User[]
+    },
 
-  async getById(id: string): Promise<User | null> {
-    const docSnap = await getDoc(doc(db, "users", id))
-    if (docSnap.exists()) {
-      return { id: docSnap.id, uid: docSnap.id, ...docSnap.data() } as User
-    }
-    return null
-  },
+    async getById(id: string): Promise<User | null> {
+      const docSnap = await getDoc(doc(db, "users", id))
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Omit<User, "id" | "uid">
+        return { id: docSnap.id, uid: docSnap.id, ...data } as User
+      }
+      return null
+    },
 
-  async create(userData: Omit<User, "id" | "uid">): Promise<string> {
-    const docRef = await addDoc(collection(db, "users"), {
-      ...userData,
-      createdAt: Timestamp.now(),
-    })
-    return docRef.id
-  },
+    async create(userData: Omit<User, "id" | "uid" | "createdAt">): Promise<string> {
+      const docRef = await addDoc(collection(db, "users"), {
+        ...userData,
+        createdAt: Timestamp.now(),
+      })
+      return docRef.id
+    },
 
   async update(id: string, userData: Partial<Omit<User, "id" | "uid">>): Promise<void> {
     const userRef = doc(db, "users", id)
@@ -341,7 +344,7 @@ export async function getAllUsers(): Promise<User[]> {
 export async function createUser(
   email: string,
   password: string,
-  userData: Omit<User, "id" | "uid" | "email">,
+  userData: Omit<User, "id" | "uid" | "email" | "createdAt">,
 ): Promise<string> {
   // Create Firebase Auth user
   const userCredential = await createUserWithEmailAndPassword(auth, email, password)
@@ -515,7 +518,7 @@ export const cashOperations = {
       method: method as any,
       refOrderId: orderId,
       notes: `Pagamento da OS #${orderId.slice(-6)}`,
-      at: new Date(),
+      at: Timestamp.now(),
       by: userId,
     })
   },

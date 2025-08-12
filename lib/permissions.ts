@@ -39,7 +39,8 @@ export type Permission = keyof typeof PERMISSIONS
 
 export function hasPermission(userRole: UserRole | undefined, permission: Permission): boolean {
   if (!userRole) return false
-  return PERMISSIONS[permission].includes(userRole)
+  // Cast the permission list to UserRole[] so TypeScript knows the array items
+  return (PERMISSIONS[permission] as readonly UserRole[]).includes(userRole)
 }
 
 export function canAccessRoute(userRole: UserRole | undefined, route: string): boolean {
