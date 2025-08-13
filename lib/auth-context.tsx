@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { auth } from './firebase';
+import { auth } from '@/lib/firebase';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -10,7 +10,7 @@ import {
   signOut,
   type User
 } from 'firebase/auth';
-import { ensureUserDoc } from './user-service';
+import { ensureUserDoc } from '@/lib/user-service';
 
 type AuthCtx = {
   user: User | null;
