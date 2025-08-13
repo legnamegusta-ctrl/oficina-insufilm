@@ -1,46 +1,39 @@
-import { initializeApp, getApps, getApp } from "firebase/app"
-import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
-import { getStorage } from "firebase/storage"
+// lib/firebase.ts
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator, type FirebaseStorage } from 'firebase/storage';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
-
-// Validate required environment variables
-const firebaseConfig = {
-  apiKey: "AIzaSyAaaXxKG4BwAKIBdDk0vrSNsQzK8BbWIA0",
-  authDomain: "brancofilmcv.firebaseapp.com",
-  projectId: "brancofilmcv",
-  storageBucket: "brancofilmcv.firebasestorage.app",
-  messagingSenderId: "513537369615",
-  appId: "1:513537369615:web:6cfec35394b5852857e57a"
+const config = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
+const app = getApps().length ? getApp() : initializeApp(config);
 
-if (missingEnvVars.length > 0) {
-  console.error("Missing required Firebase environment variables:", missingEnvVars)
-  console.error("Please add these variables to your .env.local file:")
-  missingEnvVars.forEach((envVar) => {
-    console.error(`${envVar}=your_${envVar.toLowerCase().replace("next_public_firebase_", "")}_here`)
-  })
+export const db: Firestore = getFirestore(app);
+export const storage: FirebaseStorage = getStorage(app);
 
-  throw new Error(
-    `Missing Firebase configuration. Please set the following environment variables: ${missingEnvVars.join(", ")}`,
-  )
+// Em SSR não há window; só use `auth` em componentes "use client"
+export const auth: Auth = (typeof window !== 'undefined')
+  ? getAuth(app)
+  : (null as unknown as Auth);
+
+// Emuladores (dev)
+if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
+  try { connectFirestoreEmulator(db, '127.0.0.1', Number(process.env.NEXT_PUBLIC_EMU_FS_PORT ?? 8080)); } catch {}
+  try { connectStorageEmulator(storage, '127.0.0.1', Number(process.env.NEXT_PUBLIC_EMU_ST_PORT ?? 9199)); } catch {}
+  if (typeof window !== 'undefined' && auth) {
+    try {
+      connectAuthEmulator(
+        auth,
+        `http://127.0.0.1:${Number(process.env.NEXT_PUBLIC_EMU_AUTH_PORT ?? 9099)}`,
+        { disableWarnings: true }
+      );
+    } catch {}
+  }
 }
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
-
-// Initialize Firebase services
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const storage = getStorage(app)
-
-export default app

@@ -1,82 +1,64 @@
-"use client"
+// src/lib/auth-context.tsx
+'use client';
 
-import type React from "react"
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { auth } from './firebase';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  type User
+} from 'firebase/auth';
+import { ensureUserDoc } from './user-service';
 
-import { createContext, useContext, useEffect, useState } from "react"
-import { type User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth"
-import { doc, getDoc } from "firebase/firestore"
-import { auth, db } from "./firebase"
-import type { User, UserRole } from "./types"
+type AuthCtx = {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOutUser: () => Promise<void>;
+};
 
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  hasRole: (roles: UserRole[]) => boolean
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const Ctx = createContext<AuthCtx | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // Get user profile from Firestore
-        const userDoc = await getDoc(doc(db, "users", firebaseUser.uid))
-        if (userDoc.exists()) {
-          const userData = userDoc.data()
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email!,
-            role: userData.role as UserRole,
-            name: userData.name,
-            createdAt: userData.createdAt,
-          })
-        } else {
-          // User document doesn't exist, sign out
-          await signOut(auth)
-          setUser(null)
-        }
-      } else {
-        setUser(null)
-      }
-      setLoading(false)
-    })
+    if (!auth) return; // evita rodar no server
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u ?? null);
+      setLoading(false);
+      if (u) await ensureUserDoc({ uid: u.uid, email: u.email });
+    });
+    return () => unsub();
+  }, []);
 
-    return unsubscribe
-  }, [])
-
-  const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
-  }
-
-  const logout = async () => {
-    await signOut(auth)
-  }
-
-  const hasRole = (roles: UserRole[]): boolean => {
-    return user ? roles.includes(user.role) : false
-  }
-
-  const value = {
+  const value = useMemo<AuthCtx>(() => ({
     user,
     loading,
-    signIn,
-    logout,
-    hasRole,
-  }
+    async signIn(email, password) {
+      if (!auth) return;
+      await signInWithEmailAndPassword(auth, email, password);
+    },
+    async signUp(email, password) {
+      if (!auth) return;
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await ensureUserDoc({ uid: cred.user.uid, email: cred.user.email });
+    },
+    async signOutUser() {
+      if (!auth) return;
+      await signOut(auth);
+    }
+  }), [user, loading]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error('useAuth deve ser usado dentro de <AuthProvider>');
+  return ctx;
 }
