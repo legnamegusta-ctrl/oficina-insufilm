@@ -1,5 +1,5 @@
 // src/lib/user-service.ts
-import { db } from './firebase';
+import { db } from '@/lib/firebase';
 import {
   collection, doc, getDoc, setDoc, serverTimestamp,
   query, where, limit, getDocs

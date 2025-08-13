@@ -12,7 +12,7 @@ import {
   Timestamp,
 } from "firebase/firestore"
 import { createUserWithEmailAndPassword } from "firebase/auth"
-import { auth, db } from "./firebase"
+import { auth, db } from '@/lib/firebase';
 import type {
   ScheduleBlock,
   CashEntry,

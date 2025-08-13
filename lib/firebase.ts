@@ -25,15 +25,11 @@ export const auth: Auth = (typeof window !== 'undefined')
 
 // Emuladores (dev)
 if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
-  try { connectFirestoreEmulator(db, '127.0.0.1', Number(process.env.NEXT_PUBLIC_EMU_FS_PORT ?? 8080)); } catch {}
-  try { connectStorageEmulator(storage, '127.0.0.1', Number(process.env.NEXT_PUBLIC_EMU_ST_PORT ?? 9199)); } catch {}
+  try { connectFirestoreEmulator(db, '127.0.0.1', 8080); } catch {}
+  try { connectStorageEmulator(storage, '127.0.0.1', 9199); } catch {}
   if (typeof window !== 'undefined' && auth) {
     try {
-      connectAuthEmulator(
-        auth,
-        `http://127.0.0.1:${Number(process.env.NEXT_PUBLIC_EMU_AUTH_PORT ?? 9099)}`,
-        { disableWarnings: true }
-      );
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     } catch {}
   }
 }

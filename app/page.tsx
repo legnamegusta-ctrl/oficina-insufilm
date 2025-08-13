@@ -1,7 +1,4 @@
 'use client';
-// remova estas linhas se existirem:
-// export const dynamic = 'force-dynamic';
-// export const revalidate = 0;
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
